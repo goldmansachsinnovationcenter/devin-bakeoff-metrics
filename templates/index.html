@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Quality Metrics</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Code Quality Metrics</h1>
+            <p>Upload your code files to analyze quality metrics and generate a comprehensive report.</p>
+        </header>
+        
+        <main>
+            <div class="upload-container">
+                <h2>Upload Code</h2>
+                <form action="/analyze" method="post" enctype="multipart/form-data">
+                    <div class="file-input">
+                        <label for="file">Select a file:</label>
+                        <input type="file" id="file" name="file" accept=".py,.zip" required>
+                        <p class="file-hint">Supported formats: Python files (.py) or ZIP archives containing Python files</p>
+                    </div>
+                    
+                    <button type="submit" class="submit-btn">Generate Report</button>
+                </form>
+            </div>
+            
+            <div class="metrics-info">
+                <h2>Metrics Analyzed</h2>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>Code Style</h3>
+                        <p>Analyzes adherence to PEP 8 style guidelines using Flake8.</p>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3>Code Quality</h3>
+                        <p>Evaluates code quality and maintainability using Pylint.</p>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3>Complexity</h3>
+                        <p>Measures cyclomatic complexity using Radon.</p>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <h3>Security</h3>
+                        <p>Identifies security vulnerabilities using Bandit.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>&copy; 2025 Code Quality Metrics Tool</p>
+        </footer>
+    </div>
+</body>
+</html>
