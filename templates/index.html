@@ -16,15 +16,36 @@
         <main>
             <div class="upload-container">
                 <h2>Upload Code</h2>
-                <form action="/analyze" method="post" enctype="multipart/form-data">
-                    <div class="file-input">
-                        <label for="file">Select a file:</label>
-                        <input type="file" id="file" name="file" accept=".py,.zip" required>
-                        <p class="file-hint">Supported formats: Python files (.py) or ZIP archives containing Python files</p>
+                <div class="tabs">
+                    <div class="tab-header">
+                        <div class="tab active" data-tab="file-upload">File Upload</div>
+                        <div class="tab" data-tab="github-pr">GitHub PR</div>
                     </div>
-                    
-                    <button type="submit" class="submit-btn">Generate Report</button>
-                </form>
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="file-upload">
+                            <form action="/analyze" method="post" enctype="multipart/form-data">
+                                <div class="file-input">
+                                    <label for="file">Select a file:</label>
+                                    <input type="file" id="file" name="file" accept=".py,.js,.jsx,.ts,.tsx,.java,.cpp,.cc,.cxx,.c,.h,.hpp,.go,.rb,.php,.cs,.zip" required>
+                                    <p class="file-hint">Supported formats: Code files (Python, JavaScript, TypeScript, Java, C/C++, Go, Ruby, PHP, C#) or ZIP archives containing code files</p>
+                                </div>
+                                
+                                <button type="submit" class="submit-btn">Generate Report</button>
+                            </form>
+                        </div>
+                        <div class="tab-pane" id="github-pr">
+                            <form action="/analyze_pr" method="post">
+                                <div class="pr-input">
+                                    <label for="pr_url">GitHub PR URL:</label>
+                                    <input type="url" id="pr_url" name="pr_url" placeholder="https://github.com/owner/repo/pull/123" required>
+                                    <p class="pr-hint">Enter a GitHub Pull Request URL to analyze all code files in the PR</p>
+                                </div>
+                                
+                                <button type="submit" class="submit-btn">Generate Report</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div class="metrics-info">
@@ -32,22 +53,22 @@
                 <div class="metrics-grid">
                     <div class="metric-card">
                         <h3>Code Style</h3>
-                        <p>Analyzes adherence to PEP 8 style guidelines using Flake8.</p>
+                        <p>Analyzes adherence to language-specific style guidelines and conventions.</p>
                     </div>
                     
                     <div class="metric-card">
                         <h3>Code Quality</h3>
-                        <p>Evaluates code quality and maintainability using Pylint.</p>
+                        <p>Evaluates code quality, maintainability, and best practices.</p>
                     </div>
                     
                     <div class="metric-card">
                         <h3>Complexity</h3>
-                        <p>Measures cyclomatic complexity using Radon.</p>
+                        <p>Measures cyclomatic complexity and identifies overly complex code.</p>
                     </div>
                     
                     <div class="metric-card">
                         <h3>Security</h3>
-                        <p>Identifies security vulnerabilities using Bandit.</p>
+                        <p>Identifies potential security vulnerabilities and unsafe practices.</p>
                     </div>
                 </div>
             </div>
@@ -57,5 +78,38 @@
             <p>&copy; 2025 Code Quality Metrics Tool</p>
         </footer>
     </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching functionality
+            const tabs = document.querySelectorAll('.tab');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and panes
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabPanes.forEach(p => p.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show corresponding tab pane
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Display error message if present
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            if (error) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = error;
+                document.querySelector('.upload-container').prepend(errorDiv);
+            }
+        });
+    </script>
 </body>
 </html>
