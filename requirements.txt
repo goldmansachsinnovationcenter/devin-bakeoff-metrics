@@ -1,0 +1,7 @@
+flask==2.0.1
+reportlab==3.6.1
+pylint==2.11.1
+flake8==4.0.1
+radon==5.1.0
+bandit==1.7.0
+requests==2.28.1

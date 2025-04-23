@@ -3,8 +3,11 @@ import tempfile
 import zipfile
 import subprocess
 import re
+import requests
+import json
+import base64
 from datetime import datetime
-from flask import Flask, render_template, request, send_file, redirect, url_for
+from flask import Flask, render_template, request, send_file, redirect, url_for, jsonify
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
@@ -224,6 +227,10 @@ def generate_report(metrics, filename):
     elements.append(Paragraph(f"Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", date_style))
     elements.append(Spacer(1, 0.25*inch))
     
+    if '/' in filename and 'PR#' in filename:
+        elements.append(Paragraph(f"GitHub Pull Request: {filename}", styles['Normal']))
+        elements.append(Spacer(1, 0.1*inch))
+    
     heading_style = styles['Heading1']
     elements.append(Paragraph("Summary", heading_style))
     elements.append(Spacer(1, 0.1*inch))
@@ -284,6 +291,98 @@ def get_rating(score):
         return "Poor"
     else:
         return "Very Poor"
+
+def parse_github_pr_url(pr_url):
+    """Parse a GitHub PR URL and extract owner, repo, and PR number."""
+    if not pr_url:
+        return None, None, None
+        
+    try:
+        parts = pr_url.strip('/').split('/')
+        if 'github.com' not in parts:
+            return None, None, None
+            
+        github_index = parts.index('github.com')
+        if len(parts) < github_index + 5 or parts[github_index + 3] != 'pull':
+            return None, None, None
+            
+        owner = parts[github_index + 1]
+        repo = parts[github_index + 2]
+        pr_number = parts[github_index + 4]
+        
+        return owner, repo, pr_number
+    except (ValueError, IndexError):
+        return None, None, None
+
+def fetch_github_pr_files(owner, repo, pr_number):
+    """Fetch files from a GitHub PR and save them to a temporary directory."""
+    if not owner or not repo or not pr_number:
+        return None, "Invalid GitHub PR details"
+    
+    temp_dir = tempfile.mkdtemp(dir=app.config['UPLOAD_FOLDER'])
+    
+    try:
+        pr_files_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}/files"
+        headers = {}
+        
+        github_token = os.environ.get('GITHUB_TOKEN')
+        if github_token:
+            headers['Authorization'] = f"token {github_token}"
+        
+        response = requests.get(pr_files_url, headers=headers)
+        if response.status_code != 200:
+            return None, f"Failed to fetch PR files: {response.status_code} {response.reason}"
+        
+        pr_files = response.json()
+        
+        for file in pr_files:
+            filename = file.get('filename')
+            if not filename.endswith('.py'):
+                continue
+                
+            file_path = os.path.join(temp_dir, filename)
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            
+            raw_url = file.get('raw_url')
+            content_response = requests.get(raw_url, headers=headers)
+            if content_response.status_code == 200:
+                with open(file_path, 'wb') as f:
+                    f.write(content_response.content)
+        
+        return temp_dir, None
+    except Exception as e:
+        return None, str(e)
+
+@app.route('/analyze-pr', methods=['POST'])
+def analyze_pr():
+    pr_url = request.form.get('pr_url')
+    
+    owner, repo, pr_number = parse_github_pr_url(pr_url)
+    if not owner or not repo or not pr_number:
+        return render_template('index.html', error="Invalid GitHub PR URL. Please use format: https://github.com/owner/repo/pull/123")
+    
+    analyze_dir, error = fetch_github_pr_files(owner, repo, pr_number)
+    if not analyze_dir:
+        return render_template('index.html', error=f"Error fetching PR files: {error}")
+    
+    python_files = []
+    for root, _, files in os.walk(analyze_dir):
+        for file in files:
+            if file.endswith('.py'):
+                python_files.append(os.path.join(root, file))
+    
+    if not python_files:
+        return render_template('index.html', error="No Python files found in the PR")
+    
+    metrics = {}
+    metrics['style'] = run_flake8(analyze_dir)
+    metrics['quality'] = run_pylint(analyze_dir)
+    metrics['complexity'] = run_radon(analyze_dir)
+    metrics['security'] = run_bandit(analyze_dir)
+    
+    report_path = generate_report(metrics, f"{owner}/{repo} PR#{pr_number}")
+    
+    return send_file(report_path, as_attachment=True, download_name=f"code_quality_report_{owner}_{repo}_PR{pr_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

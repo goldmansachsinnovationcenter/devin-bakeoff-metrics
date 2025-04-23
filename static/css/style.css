@@ -170,3 +170,59 @@ footer {
     margin-bottom: 20px;
     border: 1px solid #c3e6cb;
 }
+
+/* Tab Styles */
+.tabs {
+    display: flex;
+    list-style: none;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.tab {
+    padding: 10px 15px;
+    cursor: pointer;
+    margin-right: 5px;
+    border-radius: 5px 5px 0 0;
+    background-color: #f8f9fa;
+    transition: background-color 0.3s;
+}
+
+.tab.active {
+    background-color: #3498db;
+    color: white;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* GitHub PR Form Styles */
+.input-field {
+    margin-bottom: 25px;
+}
+
+.input-field label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #34495e;
+}
+
+.input-field input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #bdc3c7;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.hint {
+    margin-top: 8px;
+    font-size: 0.9rem;
+    color: #7f8c8d;
+}
