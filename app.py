@@ -60,20 +60,30 @@ def analyze_pr():
             return render_template('index.html', error="Invalid GitHub PR URL format. Expected: https://github.com/owner/repo/pull/number")
         
         temp_dir = tempfile.mkdtemp(dir=app.config['UPLOAD_FOLDER'])
+        
         pr_files = fetch_github_pr_files(owner, repo, pr_number, temp_dir)
         
         if not pr_files:
-            return render_template('index.html', error="No files found in the PR or unable to access the repository.")
+            return render_template('index.html', error="No supported code files found in the PR or unable to access the repository.")
         
         language_metrics = analyze_directory(temp_dir)
         
         if not language_metrics:
             return render_template('index.html', error="No supported code files found in the PR.")
         
-        report_path = generate_report(language_metrics, f"{owner}/{repo} PR #{pr_number}")
+        report_title = f"{owner}/{repo} PR #{pr_number}"
+        report_path = generate_report(language_metrics, report_title)
         
-        return send_file(report_path, as_attachment=True, download_name=f"code_quality_report_PR_{owner}_{repo}_{pr_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
+        return send_file(
+            report_path, 
+            as_attachment=True, 
+            download_name=f"code_quality_report_PR_{owner}_{repo}_{pr_number}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+        )
         
+    except requests.exceptions.RequestException as e:
+        return render_template('index.html', error=f"Network error accessing GitHub API: {str(e)}")
+    except json.JSONDecodeError:
+        return render_template('index.html', error="Invalid response from GitHub API. Please check your access token if you're using one.")
     except Exception as e:
         return render_template('index.html', error=f"Error analyzing PR: {str(e)}")
 
@@ -100,6 +110,8 @@ def fetch_github_pr_files(owner, repo, pr_number, temp_dir):
     
     files_data = response.json()
     downloaded_files = []
+    skipped_files = []
+    language_counts = {}
     
     for file_data in files_data:
         filename = file_data.get('filename')
@@ -107,18 +119,26 @@ def fetch_github_pr_files(owner, repo, pr_number, temp_dir):
             continue
         
         _, file_extension = os.path.splitext(filename)
+        file_extension = file_extension.lower()
+        
         if file_extension not in ALL_EXTENSIONS:
+            skipped_files.append(filename)
             continue
+        
+        language = LANGUAGE_BY_EXTENSION.get(file_extension, "Unknown")
+        language_counts[language] = language_counts.get(language, 0) + 1
         
         raw_url = file_data.get('raw_url')
         if not raw_url:
             raw_url = file_data.get('contents_url', '').replace('api.github.com/repos', 'raw.githubusercontent.com').replace('/contents/', '/')
         
         if not raw_url:
+            skipped_files.append(filename)
             continue
         
         file_response = requests.get(raw_url, headers=headers)
         if file_response.status_code != 200:
+            skipped_files.append(filename)
             continue
         
         file_path = os.path.join(temp_dir, filename)
@@ -128,6 +148,12 @@ def fetch_github_pr_files(owner, repo, pr_number, temp_dir):
             f.write(file_response.content)
         
         downloaded_files.append(file_path)
+    
+    print(f"Downloaded {len(downloaded_files)} files from PR #{pr_number}")
+    for language, count in language_counts.items():
+        print(f"  - {language}: {count} files")
+    if skipped_files:
+        print(f"Skipped {len(skipped_files)} unsupported files")
     
     return downloaded_files
 
