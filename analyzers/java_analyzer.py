@@ -3,7 +3,7 @@ import os
 import re
 import subprocess
 import tempfile
-from app import LanguageAnalyzer
+from language_analyzer import LanguageAnalyzer
 from constants import JAVA_EXTENSIONS
 
 class JavaAnalyzer(LanguageAnalyzer):

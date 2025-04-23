@@ -15,30 +15,6 @@ from reportlab.lib.units import inch
 from constants import ALL_EXTENSIONS, LANGUAGE_BY_EXTENSION
 from analyzers import PythonAnalyzer, JavaScriptAnalyzer, JavaAnalyzer
 
-class LanguageAnalyzer:
-    """Base interface for language analyzers."""
-    
-    @staticmethod
-    def get_extensions():
-        """Return file extensions supported by this analyzer."""
-        raise NotImplementedError()
-    
-    def analyze_style(self, directory):
-        """Analyze code style."""
-        raise NotImplementedError()
-    
-    def analyze_quality(self, directory):
-        """Analyze code quality."""
-        raise NotImplementedError()
-    
-    def analyze_complexity(self, directory):
-        """Analyze code complexity."""
-        raise NotImplementedError()
-    
-    def analyze_security(self, directory):
-        """Analyze code security."""
-        raise NotImplementedError()
-
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = tempfile.mkdtemp()
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size

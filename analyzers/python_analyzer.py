@@ -2,7 +2,7 @@
 import os
 import re
 import subprocess
-from app import LanguageAnalyzer
+from language_analyzer import LanguageAnalyzer
 from constants import PYTHON_EXTENSIONS
 
 class PythonAnalyzer(LanguageAnalyzer):

@@ -4,7 +4,7 @@ import re
 import subprocess
 import json
 import tempfile
-from app import LanguageAnalyzer
+from language_analyzer import LanguageAnalyzer
 from constants import JAVASCRIPT_EXTENSIONS, TYPESCRIPT_EXTENSIONS
 
 class JavaScriptAnalyzer(LanguageAnalyzer):
