@@ -16,7 +16,8 @@ from constants import ALL_EXTENSIONS, LANGUAGE_BY_EXTENSION
 from analyzers import PythonAnalyzer, JavaScriptAnalyzer, JavaAnalyzer
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = tempfile.mkdtemp()
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
 
 @app.route('/')
@@ -212,10 +213,6 @@ def analyze():
     
     return send_file(report_path, as_attachment=True, download_name=f"code_quality_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
 
-app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB max upload size
 
 def generate_report(language_metrics, filename):
     """Generate a PDF report with the analysis results for multiple languages."""
